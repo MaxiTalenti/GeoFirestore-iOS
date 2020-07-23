@@ -626,9 +626,9 @@ public class GFSQuery {
     }
     
     /**
-     * Return Array of Document Snapshots matching the Query
+     * Return Array of Document Snapshots matching the Query with a extra condition
      */
-    public func getAtLocation(field: String, isEqualTo: Any, completionHandler: @escaping GFSQuerySnapshotsBlock) {
+    public func getAtLocation(field: String, isEqualTo value: Any, completionHandler: @escaping GFSQuerySnapshotsBlock) {
         let requestGroup = DispatchGroup()
         let newQueries = queriesForCurrentCriteria()
         var queryErr : Error?
@@ -637,7 +637,69 @@ public class GFSQuery {
             requestGroup.enter()
             if let query = query as? GFGeoHashQuery{
                 let queryFirestore: Query = self.fireStoreQueryForGeoHashQuery(query: query)
-                queryFirestore.whereField(field, isEqualTo: isEqualTo)
+                queryFirestore.whereField(field, isEqualTo: value)
+                .getDocuments() {
+                    snapshot, err in
+                    if let err = err {
+                        queryErr = err
+                        requestGroup.leave()
+                        return
+                    }
+                    result.append(contentsOf: snapshot!.documents)
+                    requestGroup.leave()
+                }
+            }
+        }
+
+        requestGroup.notify(queue: geoFirestore.callbackQueue) {
+            completionHandler(result, queryErr)
+        }
+    }
+    
+    /**
+     * Return Array of Document Snapshots matching the Query with a extra condition
+     */
+    public func getAtLocation(field: String, isGreaterThanOrEqualTo value: Any, completionHandler: @escaping GFSQuerySnapshotsBlock) {
+        let requestGroup = DispatchGroup()
+        let newQueries = queriesForCurrentCriteria()
+        var queryErr : Error?
+        var result = [QueryDocumentSnapshot]()
+        for (_, element: query) in newQueries.enumerated() {
+            requestGroup.enter()
+            if let query = query as? GFGeoHashQuery{
+                let queryFirestore: Query = self.fireStoreQueryForGeoHashQuery(query: query)
+                queryFirestore.whereField(field, isGreaterThanOrEqualTo: value)
+                .getDocuments() {
+                    snapshot, err in
+                    if let err = err {
+                        queryErr = err
+                        requestGroup.leave()
+                        return
+                    }
+                    result.append(contentsOf: snapshot!.documents)
+                    requestGroup.leave()
+                }
+            }
+        }
+
+        requestGroup.notify(queue: geoFirestore.callbackQueue) {
+            completionHandler(result, queryErr)
+        }
+    }
+    
+    /**
+     * Return Array of Document Snapshots matching the Query with a extra condition
+     */
+    public func getAtLocation(field: String, isLessThanOrEqualTo value: Any, completionHandler: @escaping GFSQuerySnapshotsBlock) {
+        let requestGroup = DispatchGroup()
+        let newQueries = queriesForCurrentCriteria()
+        var queryErr : Error?
+        var result = [QueryDocumentSnapshot]()
+        for (_, element: query) in newQueries.enumerated() {
+            requestGroup.enter()
+            if let query = query as? GFGeoHashQuery{
+                let queryFirestore: Query = self.fireStoreQueryForGeoHashQuery(query: query)
+                queryFirestore.whereField(field, isLessThanOrEqualTo: value)
                 .getDocuments() {
                     snapshot, err in
                     if let err = err {
